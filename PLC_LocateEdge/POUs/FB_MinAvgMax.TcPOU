@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.5">
+  <POU Name="FB_MinAvgMax" Id="{903aa0ad-8dee-475e-af43-4e10ee0312b0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MinAvgMax
+VAR_INPUT
+	IN		: LREAL;
+END_VAR
+VAR_OUTPUT
+	mini	: LREAL := 1.7976931348623158E308;
+	avge	: LREAL;
+	maxi	: LREAL := -1.7976931348623158E308;
+END_VAR
+VAR
+	nums	: LREAL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF IN > maxi THEN
+	maxi := IN;
+END_IF
+IF IN < mini THEN
+	mini := IN;
+END_IF
+
+nums := nums + 1;
+avge := avge + (IN - avge) / nums;
+]]></ST>
+    </Implementation>
+    <Method Name="reset" Id="{1390d62d-cfda-436a-a554-9a6f3b295600}">
+      <Declaration><![CDATA[METHOD reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+mini := +1.7976931348623158E308;
+maxi := -1.7976931348623158E308;
+avge := 0;
+nums := 0;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

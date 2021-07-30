@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <POU Name="F_DimDraw" Id="{f2353075-dc96-47ad-b896-9853a4a1edfc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_DimDraw : HRESULT
+VAR_INPUT
+	dim : REFERENCE TO ST_DimBase;
+	img : ITcVnImage;
+END_VAR
+VAR
+	hr : HRESULT;
+	green : TcVnVector4_LREAL := [0, 255, 0, 0];
+	blue : TcVnVector4_LREAL := [0, 0, 255, 0];
+	red : TcVnVector4_LREAL := [255, 0, 0, 0];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF dim.pFrom[0] >= 0 AND_THEN dim.pFrom[1] >= 0 THEN
+	hr := F_VN_DrawPoint(TO_UDINT(dim.pFrom[0]), TO_UDINT(dim.pFrom[1]), img, TCVN_DS_CIRCLE, red, hr);
+END_IF
+IF dim.pTo1[0] >= 0 AND_THEN dim.pTo1[1] >= 0 THEN
+	hr := F_VN_DrawPoint(TO_UDINT(dim.pTo1[0]), TO_UDINT(dim.pTo1[1]), img, TCVN_DS_X, red, hr);
+END_IF
+IF dim.pTo2[0] >= 0 AND_THEN dim.pTo2[1] >= 0 THEN
+	hr := F_VN_DrawPoint(TO_UDINT(dim.pTo2[0]), TO_UDINT(dim.pTo2[1]), img, TCVN_DS_X, red, hr);
+END_IF
+
+IF F_VN_CheckIfEmpty(dim.edgeFrom, S_OK) = S_FALSE THEN
+	hr := F_VN_DrawPointsExp(dim.edgeFrom, img, TCVN_DS_PLUS, blue, 1, 1, TCVN_LT_8_CONNECTED, hr);
+	hr := F_VN_FitLine(dim.edgeFrom, dim.lineFrom, hr);
+	hr := F_VN_DrawLine_TcVnVector4_LREAL(dim.lineFrom, img, green, 1, hr);
+END_IF
+
+IF F_VN_CheckIfEmpty(dim.edgeTo, S_OK) = S_FALSE THEN
+	hr := F_VN_DrawPointsExp(dim.edgeTo, img, TCVN_DS_PLUS, blue, 1, 1, TCVN_LT_8_CONNECTED, hr);
+	hr := F_VN_FitLine(dim.edgeTo, dim.lineTo, hr);
+	hr := F_VN_DrawLine_TcVnVector4_LREAL(dim.lineTo, img, green, 1, hr);
+END_IF
+	
+F_DimDraw := hr;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

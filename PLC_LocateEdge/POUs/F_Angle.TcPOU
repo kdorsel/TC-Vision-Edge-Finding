@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.4">
+  <POU Name="F_Angle" Id="{45b51e20-11dc-4797-9eb2-d10e25211ae7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_Angle : HRESULT
+VAR_INPUT
+	dim : REFERENCE TO ST_DimBase;
+	img : ITcVnImage;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+F_Angle := F_VN_MeasureAngleBetweenEdgesExp(
+	ipSrcImage:= img,
+	fAngle:= dim.result,
+	aInnerPoint:= dim.pFrom,
+	aOuterPoint1:= dim.pTo1,
+	aOuterPoint2:= dim.pTo2,
+	eEdgeDirection:= dim.dir,
+	fMinStrength:= dim.minStr,
+	nSearchLines:= dim.lines,
+	fSearchLineDist:= dim.lineDist,
+	nMaxThickness:= dim.maxThick,
+	bInvertSearchDirection:= dim.invDir,
+	nSubpixelsIterations:= dim.subpix,
+	bAngleInDegrees:= dim.degrees,
+	fApproxPrecision:= dim.precision,
+	eAlgorithm:= dim.algorithm,
+	ipEdgePoints1:= dim.edgeFrom,
+	ipEdgePoints2:= dim.edgeTo,
+	hrPrev:=S_OK
+);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

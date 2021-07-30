@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <POU Name="MAIN" Id="{ce0a041c-19fd-4107-8170-0eb5a315e045}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	res : ARRAY [0..4] OF FB_MinAvgMax;
+	ets : ARRAY [0..5] OF FB_MinAvgMax;
+	total_et : DINT;
+	test: BOOL;
+	ii: INT;
+	state: INT;
+	cnt : INT;
+	test2: BOOL;
+	
+	avg : LREAL;
+	avg1 : TcVnVector2_LREAL;
+	avg2 : TcVnVector2_LREAL;
+	size1 : ULINT;
+	size2 : ULINT;
+	size3 : ULINT;
+	
+	idx : INT;
+	arr1 : ARRAY [0..500] OF TcVnVector2_REAL;
+	arr2 : ARRAY [0..500] OF TcVnVector2_REAL;
+	arr3 : ARRAY [0..500] OF REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF test THEN
+	test := FALSE;
+	camera.trig();
+END_IF
+
+IF test2 THEN
+	test2 := FALSE;
+	F_VN_ContainerAverage(dimDist[idx].results, avg, S_OK);
+	F_VN_ContainerAverageElementwise2(dimDist[idx].edgeFrom, avg1, S_OK);
+	F_VN_ContainerAverageElementwise2(dimDist[idx].edgeTo, avg2, S_OK);
+	
+	F_VN_ExportContainerSize(dimDist[idx].edgeFrom, size1, S_OK);
+	F_VN_ExportContainerSize(dimDist[idx].edgeTo, size2, S_OK);
+	F_VN_ExportContainerSize(dimDist[idx].results, size3, S_OK);
+	
+	F_VN_ExportContainer(dimDist[idx].edgeFrom, ADR(arr1), SIZEOF(arr1), s_ok);
+	F_VN_ExportContainer(dimDist[idx].edgeTo, ADR(arr2), SIZEOF(arr2), s_ok);
+	F_VN_ExportContainer(dimDist[idx].results, ADR(arr3), SIZEOF(arr3), s_ok);
+END_IF
+
+CASE state OF
+	10:
+		camera.trig();
+		state := 11;
+	11:
+		IF NOT camera.busy THEN
+			total_et := 0;
+			FOR ii := 0 TO 4 DO
+				res[ii](IN:=dimDist[ii].result);
+				ets[ii](IN:=dimDist[ii].et);
+				total_et := total_et + dimDist[ii].et;
+			END_FOR
+			ets[5](IN:=total_et);
+			cnt := cnt + 1;
+			IF cnt < 100 THEN
+				state := 10;
+			ELSE
+				cnt := 0;
+				state := 0;
+			END_IF
+		END_IF
+	12:
+		FOR ii := 0 TO 4 DO
+			res[ii].reset();
+			ets[ii].reset();
+		END_FOR
+		ets[5].reset();
+		state := 0;
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

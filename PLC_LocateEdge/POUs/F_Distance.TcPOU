@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <POU Name="F_Distance" Id="{0e6be4cb-81bb-4f3c-a6af-e3faed3e8d25}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_Distance : HRESULT
+VAR_INPUT
+	dim : REFERENCE TO ST_DimBase;
+	img : ITcVnImage;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF dim.gap < 0 THEN
+	// If gap less than zero auto calculate based on largest diff between x/y and set to 80%
+	// Helps reduce computation time
+	dim.gap := MAX(ABS(dim.pTo1[0] - dim.pFrom[0]), ABS(dim.pTo1[1] - dim.pFrom[1])) * 0.8;
+END_IF
+
+F_Distance := F_VN_MeasureEdgeDistanceExp(
+	ipSrcImage:=img,
+	fAvgDistance:=dim.result,
+	aStartPoint:=dim.pFrom,
+	aEndPoint:=dim.pTo1,
+	eEdgeDirection:=dim.dir,
+	fMinStrength:=dim.minStr,
+	nSearchLines:=dim.lines,
+	fSearchLineDist:=dim.lineDist,
+	nMaxThickness:=dim.maxThick,
+	bInvertSearchDirection:=dim.invDir,
+	fSearchGap:=dim.gap,
+	nSubpixelsIterations:=dim.subpix,
+	fApproxPrecision:=dim.precision,
+	eAlgorithm:=dim.algorithm,
+	ipEdgePoints1:=dim.edgeFrom,
+	ipEdgePoints2:=dim.edgeTo,
+	ipDistances:=dim.results,
+	hrPrev:=S_OK
+);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

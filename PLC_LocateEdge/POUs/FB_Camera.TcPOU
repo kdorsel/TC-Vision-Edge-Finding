@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <POU Name="FB_Camera" Id="{ab9b65e1-eb46-4d76-9902-170f8b4a79ff}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Camera
+VAR_IN_OUT
+	dims : ARRAY [*] OF ST_DimBase;
+END_VAR
+VAR_OUTPUT
+	busy : BOOL;
+	ET : DINT;
+END_VAR
+VAR
+	hr : HRESULT;
+	hrFunc : HRESULT;
+	hrWD : HRESULT;
+	
+	camera : FB_VN_SimpleCameraControl;
+	camState : ETcVnCameraState;
+	
+	imgIn : ITcVnImage;
+	imgInDisp : ITcVnDisplayableImage;
+	imgOut : ITcVnImage;
+	imgOutDisp : ITcVnDisplayableImage;
+	
+	state : INT;
+	preempt : DINT;
+	remain : DINT;
+	complete : UDINT;
+	ii : DINT;
+	upper : DINT;
+	lower : DINT;
+	trigger : BOOL;
+	cycleCnt : INT;
+	old: INT;
+	hr1:HRESULT;
+	hr2:HRESULT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+camState := camera.GetState();
+CASE state OF
+	0:
+		lower := LOWER_BOUND(dims, 1);
+		upper := UPPER_BOUND(dims, 1);
+		// Allow 1 ms for other items in task before and after vision
+		preempt := TO_DINT(_TaskInfo[GETCURTASKINDEXEX()].CycleTime / 10) - 1000;
+		IF preempt < 1000 THEN
+			// Task cycle time is 1ms or less. Will not work.
+			state := -1;
+		ELSE
+			state := 1000;
+		END_IF
+	1000:
+		busy := FALSE;
+		CASE camState OF
+			TCVN_CS_INITIAL, TCVN_CS_OPENING, TCVN_CS_OPENED, TCVN_CS_STARTACQUISITION:
+				hr := camera.StartAcquisition();
+			TCVN_CS_Error:
+				state := -1;
+		END_CASE
+	1010:
+		CASE camState OF
+			TCVN_CS_TRIGGERING:
+				// If getting 16#98110712 the source likely has trigger disabled
+				hr1 := camera.TriggerImage();
+			TCVN_CS_ACQUIRING:
+				IF trigger THEN
+					hr2 := camera.TriggerImage();
+					IF succeeded(hr2) THEN
+						trigger := FALSE;
+					END_IF
+				ELSE
+					hr := camera.GetCurrentImage(imgIn);
+					IF SUCCEEDED(hr) AND_THEN imgIn <> 0 THEN
+						ii := lower;
+						ET := 0;
+						cycleCnt := 0;
+						state := 1020;
+					END_IF
+				END_IF
+			TCVN_CS_ERROR:
+				state := -1;
+		END_CASE
+	1020:
+		remain := preempt; // Reset remain on each new cycle
+		cycleCnt := cycleCnt + 1;
+		FOR ii := ii TO upper DO
+			hrWD := F_VN_StartRelWatchdog(remain, S_OK);
+			// If returns 16#71A Task Watchdog Stack not enabled
+			IF dims[ii].pTo2[0] = -1 THEN
+				// pTo2 not used in Distance measurement
+				hrFunc := F_Distance(dims[ii], imgIn);
+			ELSE
+				// But it is used in angle measurement
+				hrFunc := F_Angle(dims[ii], imgIn);
+			END_IF
+			hrWD := F_VN_StopWatchdog(hrWD, nFractionProcessed=>complete, tRest=>remain);
+			IF FAILED(hrFunc) OR_ELSE FAILED(hrWD) THEN
+				// Send failed message
+				// Will move on to other inspections and this one is ignored
+			END_IF
+			dims[ii].et := (cycleCnt * preempt) - ET - remain;
+			dims[ii].complete := complete;
+			ET := ET + dims[ii].et;
+			IF complete <> 100 AND_THEN SUCCEEDED(hrFunc) THEN
+				// Try calculation again in new cycle if not complete, but also not errored
+				// Watchdog likely stopped it before completion
+				EXIT;
+			ELSIF ii = upper THEN
+				// All calculations completed
+				state := 1030;
+				EXIT;
+			ELSIF dims[ii+1].et > remain OR_ELSE (dims[ii+1].et = 0 AND_THEN remain < 1000) THEN
+				// If the calculation was already done check its elapsed time larger than remain
+				// If first time doing then try if more then 1ms remain otherwise start on new cycle
+				ii := ii + 1;
+				EXIT;
+			END_IF
+		END_FOR
+	1030:
+		hr := F_VN_ConvertColorSpace(imgIn, imgOut, TCVN_CST_GRAY_TO_RGB, hr);
+		FOR ii := lower TO upper DO
+			F_DimDraw(dims[ii], imgOut);
+		END_FOR
+		
+		hr := F_VN_TransformIntoDisplayableImage(imgIn, imgInDisp, S_OK);
+		hr := F_VN_TransformIntoDisplayableImage(imgOut, imgOutDisp, S_OK);
+		state := 1000;
+	-1000:
+		// If stays in error then not linked to file/device
+		// Check instance symbol initialization
+		camera.Reset();
+		IF camState <> TCVN_CS_ERROR THEN
+			state := 0;
+		END_IF
+END_CASE
+]]></ST>
+    </Implementation>
+    <Method Name="trig" Id="{5757df49-225b-4792-8fc5-eb9877cd91b9}">
+      <Declaration><![CDATA[METHOD trig : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF state = 1000 AND_THEN camState = TCVN_CS_ACQUIRING AND_THEN NOT busy THEN
+	busy := TRUE;
+	ET := 0;
+	trigger := TRUE;
+	state := 1010;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,42 @@
+# TwinCAT Projects
+*.~u
+*.bak
+*.tclrs
+*.tpy
+*.tmcRefac
+*.imgcache
+_CompileInfo/
+_Libraries/
+_Boot/
+*.bin
+*.dbg
+
+# Only ignore the auto generated tmc file
+# If creating a custom tmc file make sure it is in source control
+# Put it inside Plc/ and not Plc/Untitiled1/
+*/*/*.tmc
+
+# Databases
+*.db*
+*.sqlite*
+
+# User specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studo
+.vs/
+
+# Meausurement Projects
+*.tcscope
+*.tcmproj
+*.svd
+
+# Archives
+*.zip
+*.7z
+
+# Python 
+env/*

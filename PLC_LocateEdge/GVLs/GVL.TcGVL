@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <GVL Name="GVL" Id="{c96badb8-d16d-42f8-af22-8f55a8273c08}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	camera : FB_Camera;
+	dimDist : ARRAY [0..4] OF ST_DimBase := [
+		(name:='d201', pFrom:=[115, 1290], pTo1:=[640, 1290], gap:=-1, lines:=291, lineDist:=3),
+		(name:='d209', pFrom:=[245, 795], pTo1:=[245, 1770], gap:=-1, lines:=49, lineDist:=4),
+		(name:='d222', pFrom:=[760, 875], pTo1:=[760, 1700], gap:=-1, lines:=45, lineDist:=4),
+		(name:='od', pFrom:=[2260, 970], pTo1:=[2260, 1650], gap:=-1, lines:=121, lineDist:=4),
+		(name:='gripper', pFrom:=[860, 450], pTo1:=[1850, 450], gap:=-1, lines:=161, lineDist:=5)
+	];
+END_VAR
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

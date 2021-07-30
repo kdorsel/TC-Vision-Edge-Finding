@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <DUT Name="ST_DimBase" Id="{237085a3-e68d-4927-a1f3-fa5ab395ea95}">
+    <Declaration><![CDATA[TYPE ST_DimBase :
+STRUCT
+	// Config
+	name : STRING(255);
+	
+	// Must be set. Default values will return errors
+	pFrom : TcVnPoint2_REAL := [-1, -1];
+	pTo1 : TcVnPoint2_REAL := [-1, -1];
+	pTo2 : TcVnPoint2_REAL := [-1, -1]; // Used for angle
+	lines : UDINT := 0;
+	
+	// Can use defaults
+	dir : ETcVnEdgeDirection := TCVN_ED_LIGHT_TO_DARK;
+	minStr : REAL := 50;
+	lineDist : REAL := 1;
+	maxThick : UDINT := 10;
+	gap : REAL := 0;
+	precision : REAL := 0.0001; // 0.01 - 0.0001 only used for ERF/Gaussian
+	subpix : UDINT := 1000; // 5-20 for INTER, 50-100 for ERF/Gaussian
+	invDir : BOOL := FALSE;
+	algorithm : ETcVnEdgeDetectionAlgorithm := TCVN_EDA_APPROX_ERF;
+	degrees : BOOL := TRUE; // Used for angle
+	
+	// Results
+	result : REAL;
+	et : DINT; // Elapsed time in us
+	complete : UDINT;
+	results : ITcVnContainer; // Used for distance
+	edgeFrom : ITcVnContainer;
+	edgeTo : ITcVnContainer;
+	lineFrom : TcVnVector4_LREAL;
+	lineTo : TcVnVector4_LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
